@@ -11,3 +11,5 @@ dbt_packages/
 logs/
 airflow/logs/
 airflow/plugins/
+create_metabase_dashboard.py
+query.sql
