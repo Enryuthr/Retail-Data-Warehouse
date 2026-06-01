@@ -1,0 +1,22 @@
+name: retail_data_platform
+version: "1.0.0"
+config-version: 2
+
+profile: retail_data_platform
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  retail_data_platform:
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table

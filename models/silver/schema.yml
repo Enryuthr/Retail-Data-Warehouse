@@ -1,0 +1,207 @@
+version: 2
+
+models:
+  - name: customers
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['High_Value', 'Low_Value', 'Medium_Value', 'New_Customer']
+      - name: preferred_channel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Direct', 'Email', 'Push', 'SMS', 'Social']
+      - name: age_group
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['18-25', '26-35', '36-45', '46-55', '55+']
+      - name: income_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['High', 'Low', 'Medium', 'Premium']
+      - name: preferred_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports']
+  - name: promotions
+    columns:
+      - name: promotion_id
+        data_tests:
+          - unique
+          - not_null
+      - name: promo_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['BOGO', 'Fixed_Amount', 'Free_Shipping', 'Percentage_Discount']
+      - name: target_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['All_Customers', 'High_Value', 'Lapsed', 'Low_Value', 'Medium_Value', 'New_Customer']
+      - name: campaign_channel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Email', 'In_App', 'Push', 'SMS', 'Social', 'Website_Banner']
+      - name: campaign_objective
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Acquisition', 'Cross_Sell', 'Reactivation', 'Retention', 'Upsell']
+      - name: target_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports']
+  - name: orders
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('customers')
+                field: customer_id
+      - name: promotion_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('promotions')
+                field: promotion_id
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CANCEL', 'ERROR', 'INVALID', 'PAID', 'PENDING']
+      - name: order_channel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Direct', 'Email', 'Push', 'SMS', 'Social']
+  - name: order_items
+    columns:
+      - name: order_item_id
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('orders')
+                field: order_id
+      - name: product_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports']
+      - name: promotion_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('promotions')
+                field: promotion_id
+  - name: dim_customer
+    columns:
+      - name: customer_key
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+  - name: dim_promotion
+    columns:
+      - name: promotion_key
+        data_tests:
+          - unique
+          - not_null
+  - name: dim_product
+    columns:
+      - name: product_key
+        data_tests:
+          - unique
+          - not_null
+      - name: product_id
+        data_tests:
+          - not_null
+      - name: product_category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports', 'Unknown']
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests:
+          - unique
+          - not_null
+  - name: fact_orders
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: promotion_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_promotion')
+                field: promotion_key
+      - name: order_date_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+  - name: fact_order_items
+    columns:
+      - name: order_item_id
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_orders')
+                field: order_id
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: promotion_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_promotion')
+                field: promotion_key

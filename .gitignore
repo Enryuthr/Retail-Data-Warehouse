@@ -1,0 +1,13 @@
+.env
+.user.yml
+profiles.yml
+.vscode/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+target/
+dbt_packages/
+logs/
+airflow/logs/
+airflow/plugins/

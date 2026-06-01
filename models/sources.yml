@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: orders_raw
+        columns:
+          - name: order_id
+            data_tests:
+              - not_null
+      - name: customers_raw
+        columns:
+          - name: customer_id
+            data_tests:
+              - not_null
+      - name: order_items_raw
+        columns:
+          - name: order_item_id
+            data_tests:
+              - not_null
+      - name: promotions_raw
+        columns:
+          - name: promotion_id
+            data_tests:
+              - not_null

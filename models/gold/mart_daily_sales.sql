@@ -1,0 +1,23 @@
+select
+    dd.full_date as order_day,
+    coalesce(fo.order_channel, 'Unknown') as order_channel,
+    coalesce(fo.customer_segment_at_time, 'Unknown') as customer_segment_at_time,
+    count(*) as total_orders,
+    count(distinct fo.customer_key) as unique_customers,
+    sum(fo.order_value) as total_revenue,
+    avg(fo.order_value) as avg_order_value,
+    sum(
+        case
+            when fo.attributed_to_promo then fo.order_value
+            else 0
+        end
+    ) as promo_attributed_revenue,
+    count(*) filter (where fo.attributed_to_promo) as promo_attributed_orders
+from {{ ref('fact_orders') }} fo
+join {{ ref('dim_date') }} dd
+    on fo.order_date_key = dd.date_key
+where fo.order_status = 'PAID'
+group by
+    dd.full_date,
+    coalesce(fo.order_channel, 'Unknown'),
+    coalesce(fo.customer_segment_at_time, 'Unknown')

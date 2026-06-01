@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: mart_daily_sales
+    columns:
+      - name: order_day
+        data_tests:
+          - not_null
+      - name: order_channel
+        data_tests:
+          - not_null
+      - name: customer_segment_at_time
+        data_tests:
+          - not_null
+  - name: mart_customer_summary
+    columns:
+      - name: customer_key
+        data_tests:
+          - unique
+          - not_null
+      - name: income_level
+        data_tests:
+          - not_null
+      - name: customer_segment
+        data_tests:
+          - not_null
+  - name: mart_promotion_performance
+    columns:
+      - name: promotion_key
+        data_tests:
+          - unique
+          - not_null
+      - name: campaign_name
+        data_tests:
+          - not_null
+  - name: mart_product_category_performance
+    columns:
+      - name: product_category
+        data_tests:
+          - unique
+          - not_null
