@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from airflow.operators.python import PythonOperator
 PROJECT_DIR = Path(os.getenv("RETAIL_PROJECT_DIR", "/opt/airflow/project"))
 DATA_DIR = PROJECT_DIR / "data"
 ENV_FILE = PROJECT_DIR / ".env"
+DBT_COMMAND = f"{sys.executable} -c 'from dbt.cli.main import cli; cli()'"
 
 CSV_FILES = [
     "customers.csv",
@@ -76,7 +78,7 @@ with DAG(
     dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command=(
-            "dbt run "
+            f"{DBT_COMMAND} run "
             f"--project-dir {PROJECT_DIR} "
             f"--profiles-dir {PROJECT_DIR}"
         ),
@@ -87,7 +89,7 @@ with DAG(
     dbt_test = BashOperator(
         task_id="dbt_test",
         bash_command=(
-            "dbt test "
+            f"{DBT_COMMAND} test "
             f"--project-dir {PROJECT_DIR} "
             f"--profiles-dir {PROJECT_DIR}"
         ),

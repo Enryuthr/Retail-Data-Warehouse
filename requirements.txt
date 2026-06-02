@@ -1,4 +1,5 @@
 pandas
 SQLAlchemy
 psycopg2-binary
+dbt-core==1.10.22
 dbt-postgres==1.10.0
