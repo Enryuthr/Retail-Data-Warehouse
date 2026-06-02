@@ -13,8 +13,8 @@ Retail analytics pipeline using PostgreSQL, Python, and dbt.
 ```text
 data/                 CSV source files
 macros/               dbt macros
-models/silver/        cleaned tables, dimensions, and facts
-models/gold/          analytics marts
+models/silver/        cleaned and standardized source tables
+models/gold/          star schema dimensions, facts, and analytics marts
 load_bronze.py        CSV to bronze loader
 dbt_project.yml       dbt project config
 profiles.yml.example  dbt profile template

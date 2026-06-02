@@ -1,6 +1,95 @@
 version: 2
 
 models:
+  - name: dim_customer
+    columns:
+      - name: customer_key
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+  - name: dim_promotion
+    columns:
+      - name: promotion_key
+        data_tests:
+          - unique
+          - not_null
+  - name: dim_product
+    columns:
+      - name: product_key
+        data_tests:
+          - unique
+          - not_null
+      - name: product_id
+        data_tests:
+          - not_null
+      - name: product_category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports', 'Unknown']
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests:
+          - unique
+          - not_null
+  - name: fact_orders
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: promotion_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_promotion')
+                field: promotion_key
+      - name: order_date_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+  - name: fact_order_items
+    columns:
+      - name: order_item_id
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_orders')
+                field: order_id
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: promotion_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_promotion')
+                field: promotion_key
   - name: mart_daily_sales
     columns:
       - name: order_day
