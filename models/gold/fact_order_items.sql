@@ -1,8 +1,8 @@
 select
     oi.order_item_id,
     oi.order_id,
-    dpr.product_key,
-    dp.promotion_key,
+    coalesce(dpr.product_key, -1) as product_key,
+    coalesce(dp.promotion_key, -1) as promotion_key,
     oi.quantity,
     oi.unit_price,
     oi.line_total,

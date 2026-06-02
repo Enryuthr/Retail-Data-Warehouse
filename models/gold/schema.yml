@@ -128,3 +128,44 @@ models:
         data_tests:
           - unique
           - not_null
+
+  - name: gold_customer_360
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+      - name: total_revenue
+        data_tests:
+          - not_null
+      - name: lifecycle_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['New', 'Active', 'At Risk', 'Dormant']
+
+  - name: gold_promotion_performance
+    columns:
+      - name: promotion_id
+        data_tests:
+          - unique
+          - not_null
+      - name: campaign_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Unknown', 'Upcoming', 'Active', 'Completed']
+
+  - name: gold_channel_performance
+    columns:
+      - name: channel
+        data_tests:
+          - unique
+          - not_null
+
+  - name: gold_category_performance
+    columns:
+      - name: product_category
+        data_tests:
+          - unique
+          - not_null

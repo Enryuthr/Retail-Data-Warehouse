@@ -1,130 +1,126 @@
 # Retail Data Platform
 
-Retail analytics pipeline using PostgreSQL, Python, and dbt.
+Production-ready medallion pipeline for ecommerce promotion analytics using CSV
+bronze loads, dbt silver/gold transformations, PostgreSQL, Airflow, Docker, and
+CSV/Parquet exports.
 
-## Layers
-
-- `bronze`: raw CSV data loaded into PostgreSQL by `load_bronze.py`
-- `silver`: cleaned tables plus dimensional star schema built by dbt
-- `gold`: analytics marts built by dbt
-
-## Project Structure
+## Folder Structure
 
 ```text
-data/                 CSV source files
-macros/               dbt macros
-models/silver/        cleaned and standardized source tables
-models/gold/          star schema dimensions, facts, and analytics marts
-load_bronze.py        CSV to bronze loader
-dbt_project.yml       dbt project config
-profiles.yml.example  dbt profile template
-.env.example          environment variable template
-```
-
-## Setup
-
-Create a virtual environment and install dependencies:
-
-```powershell
-python -m venv venv
-venv\Scripts\python.exe -m pip install -r requirements.txt
-```
-
-Create `.env` from `.env.example` and fill in your PostgreSQL password.
-
-Create `profiles.yml` from `profiles.yml.example`.
-
-## Run Pipeline
-
-Load CSV files into the `bronze` schema:
-
-```powershell
-venv\Scripts\python.exe load_bronze.py
-```
-
-Build silver and gold dbt models:
-
-```powershell
-venv\Scripts\dbt.exe run --profiles-dir .
-venv\Scripts\dbt.exe test --profiles-dir .
+data/                         Input CSV files
+reports/                      Raw inspection reports
+outputs/silver/               Silver CSV and Parquet exports
+outputs/gold/                 Gold CSV and Parquet exports
+airflow/dags/                 Airflow DAG
+docker/postgres/init/         Warehouse schema bootstrap SQL
+macros/                       Reusable dbt cleaning macros
+models/silver/                Clean silver models and quality report
+models/gold/                  Dimensions, facts, marts, and requested gold tables
+tests/                        Custom dbt assertions
+load_bronze.py                CSV to bronze loader
+inspect_raw_data.py           Raw CSV profiler
+export_outputs.py             Silver/gold CSV and Parquet exporter
+docker-compose.airflow.yml    Airflow, warehouse Postgres, dbt runner, Metabase
 ```
 
 ## Run With Airflow
 
-Airflow is configured with Docker Compose in `docker-compose.airflow.yml`.
+```powershell
+docker compose -f docker-compose.airflow.yml up airflow-init
+docker compose -f docker-compose.airflow.yml up
+```
 
-The Compose stack includes both Airflow and a dedicated PostgreSQL database for
-the retail warehouse. Airflow connects to that database using the Docker service
-name `retail-postgres`.
+Open Airflow at `http://localhost:8080` with `admin` / `admin`, then trigger
+the `retail_data_platform` DAG. The DAG validates CSVs, profiles raw data,
+loads bronze, runs dbt, runs dbt tests, and exports silver/gold outputs.
 
-Start Airflow:
+## Run dbt With Docker
 
 ```powershell
-docker-compose -f docker-compose.airflow.yml up airflow-init
-docker-compose -f docker-compose.airflow.yml up
+docker compose -f docker-compose.airflow.yml run --rm dbt dbt run --profiles-dir .
+docker compose -f docker-compose.airflow.yml run --rm dbt dbt test --profiles-dir .
 ```
 
-Open Airflow at http://localhost:8080 and sign in with:
+The `dbt` service connects to the same `retail-postgres` warehouse used by
+Airflow.
 
-```text
-username: admin
-password: admin
-```
-
-Trigger the `retail_data_platform` DAG. It runs:
-
-1. Validate required CSV files exist
-2. Load CSV files into the `bronze` schema
-3. Run dbt models
-4. Run dbt tests
-
-Your retail database is exposed on your machine at:
-
-```text
-localhost:5433
-```
-
-Use the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` values from
-`.env` when connecting from your SQL client.
-
-## Dashboard With Metabase
-
-Metabase is included in the Docker Compose stack.
-
-Start the stack:
+## Run Locally
 
 ```powershell
-docker-compose -f docker-compose.airflow.yml up
+python -m venv venv
+venv\Scripts\python.exe -m pip install -r requirements.txt
+venv\Scripts\python.exe inspect_raw_data.py
+venv\Scripts\python.exe load_bronze.py
+venv\Scripts\dbt.exe run --profiles-dir .
+venv\Scripts\dbt.exe test --profiles-dir .
+venv\Scripts\python.exe export_outputs.py
 ```
 
-Open Metabase at http://localhost:3000 and create your admin account.
+## Silver Tables
 
-When Metabase asks you to add a database, use:
+`silver.silver_customers`: one row per `customer_id`; standardized profile
+fields, parsed registration and last purchase timestamps where valid, opt-ins as
+booleans, and flags for invalid phone, missing last purchase, and invalid
+registration date.
+
+`silver.silver_orders`: one row per `order_id`; valid customer references only,
+standardized status/channel, non-negative order values, valid promotion
+references where present, and promotion/value quality flags.
+
+`silver.silver_order_items`: one row per `order_item_id`; valid order references
+only, standardized category, `item_revenue`, `line_total`, and quantity/unit
+price/promotion attribution flags.
+
+`silver.silver_promotions`: one row per `promotion_id`; standardized campaign
+fields, parsed start/end timestamps, validated numeric campaign measures, and
+date/discount/response-rate/budget flags.
+
+`silver.data_quality_report`: issue type, table name, affected row count, and
+severity for primary-key, bad-value, attribution, date, and relationship checks.
+
+## Gold Tables
+
+`gold.gold_customer_360`: one row per customer with profile fields, order counts,
+paid/cancelled counts, promo/non-promo revenue, preferred purchased category,
+recency, and lifecycle segment.
+
+`gold.gold_promotion_performance`: one row per promotion with campaign fields,
+orders/customers/revenue/items, attributed metrics, estimated CPA,
+revenue-per-budget, campaign status, and promotion validity flags.
+
+`gold.gold_channel_performance`: one row per order/campaign channel with orders,
+revenue, promo metrics, unique customers, average order value, campaign count,
+and budget.
+
+`gold.gold_category_performance`: one row per product category with items sold,
+revenue, unique orders/customers, and promo-attributed revenue.
+
+## Data Quality Summary
+
+Current `silver.data_quality_report` output:
 
 ```text
-Database type: PostgreSQL
-Host: retail-postgres
-Port: 5432
-Database name: retail_dw
-Username: value from POSTGRES_USER in .env
-Password: value from POSTGRES_PASSWORD in .env
-Schemas: gold, silver
+customers_raw: invalid_phone = 2000, invalid_registration_date = 2000
+orders_raw: missing_promotion_id = 11695
+order_items_raw: invalid_quantity = 64
+promotions_raw: invalid_date_range = 35, negative_discount_value = 16
 ```
 
-Build dashboard cards from the gold marts:
+Rows are flagged wherever possible. Rows are excluded only when they cannot
+satisfy required grain or required foreign-key constraints, such as orders with
+invalid customers or order items with invalid orders. Invalid optional promotion
+references are nulled and flagged so facts remain usable.
 
-```text
-gold.mart_daily_sales
-gold.mart_customer_summary
-gold.mart_promotion_performance
-gold.mart_product_category_performance
-```
+## Key Assumptions
 
-## Useful Checks
-
-```sql
-SELECT table_schema, table_name
-FROM information_schema.tables
-WHERE table_schema IN ('bronze', 'silver', 'gold')
-ORDER BY table_schema, table_name;
-```
+- Valid dates start with an ISO date component like `YYYY-MM-DD`; full timestamps
+  are accepted.
+- Customer `registration_date` and many phone values are damaged in the sample
+  CSV, so they are retained with quality flags rather than repaired.
+- Paid orders drive revenue metrics in the customer, promotion, channel, and
+  category gold tables.
+- Missing `promotion_id` is valid for non-promo orders, but it is reported as a
+  low-severity quality issue and flagged when attribution says promo-driven.
+- Lifecycle segmentation uses current warehouse date: `Active` up to 30 days,
+  `At Risk` up to 90 days, otherwise `Dormant`; customers with no paid order are
+  `New`.

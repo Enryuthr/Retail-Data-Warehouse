@@ -2,6 +2,7 @@ version: 2
 
 models:
   - name: customers
+    description: Clean one-row-per-customer silver table, materialized as silver.silver_customers.
     columns:
       - name: customer_id
         data_tests:
@@ -11,28 +12,30 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: ['High_Value', 'Low_Value', 'Medium_Value', 'New_Customer']
+                values: ['High_Value', 'Low_Value', 'Medium_Value', 'New_Customer', 'Unknown']
       - name: preferred_channel
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Direct', 'Email', 'Push', 'SMS', 'Social']
+                values: ['Direct', 'Email', 'Push', 'SMS', 'Social', 'Unknown']
       - name: age_group
         data_tests:
           - accepted_values:
               arguments:
-                values: ['18-25', '26-35', '36-45', '46-55', '55+']
+                values: ['18-25', '26-35', '36-45', '46-55', '55+', 'Unknown']
       - name: income_level
         data_tests:
           - accepted_values:
               arguments:
-                values: ['High', 'Low', 'Medium', 'Premium']
+                values: ['High', 'Low', 'Medium', 'Premium', 'Unknown']
       - name: preferred_category
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports']
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports', 'Unknown']
+
   - name: promotions
+    description: Clean one-row-per-promotion silver table, materialized as silver.silver_promotions.
     columns:
       - name: promotion_id
         data_tests:
@@ -42,28 +45,30 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: ['BOGO', 'Fixed_Amount', 'Free_Shipping', 'Percentage_Discount']
+                values: ['BOGO', 'Fixed_Amount', 'Free_Shipping', 'Percentage_Discount', 'Unknown']
       - name: target_segment
         data_tests:
           - accepted_values:
               arguments:
-                values: ['All_Customers', 'High_Value', 'Lapsed', 'Low_Value', 'Medium_Value', 'New_Customer']
+                values: ['All_Customers', 'High_Value', 'Lapsed', 'Low_Value', 'Medium_Value', 'New_Customer', 'Unknown']
       - name: campaign_channel
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Email', 'In_App', 'Push', 'SMS', 'Social', 'Website_Banner']
+                values: ['Email', 'In_App', 'Push', 'SMS', 'Social', 'Website_Banner', 'Unknown']
       - name: campaign_objective
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Acquisition', 'Cross_Sell', 'Reactivation', 'Retention', 'Upsell']
+                values: ['Acquisition', 'Cross_Sell', 'Reactivation', 'Retention', 'Upsell', 'Unknown']
       - name: target_category
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports']
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports', 'Unknown']
+
   - name: orders
+    description: Clean one-row-per-order silver table, materialized as silver.silver_orders.
     columns:
       - name: order_id
         data_tests:
@@ -86,13 +91,15 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: ['CANCEL', 'ERROR', 'INVALID', 'PAID', 'PENDING']
+                values: ['CANCEL', 'ERROR', 'INVALID', 'PAID', 'PENDING', 'UNKNOWN']
       - name: order_channel
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Direct', 'Email', 'Push', 'SMS', 'Social']
+                values: ['Direct', 'Email', 'Push', 'SMS', 'Social', 'Unknown']
+
   - name: order_items
+    description: Clean one-row-per-order-item silver table, materialized as silver.silver_order_items.
     columns:
       - name: order_item_id
         data_tests:
@@ -109,10 +116,28 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports']
+                values: ['Beauty', 'Books', 'Clothing', 'Electronics', 'Home', 'Sports', 'Unknown']
       - name: promotion_id
         data_tests:
           - relationships:
               arguments:
                 to: ref('promotions')
                 field: promotion_id
+
+  - name: data_quality_report
+    description: Aggregated issue counts from raw and silver relational checks.
+    columns:
+      - name: issue_type
+        data_tests:
+          - not_null
+      - name: table_name
+        data_tests:
+          - not_null
+      - name: affected_row_count
+        data_tests:
+          - not_null
+      - name: severity
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high']

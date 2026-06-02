@@ -24,3 +24,17 @@ select
         else false
     end as is_weekend
 from date_series
+
+union all
+
+select
+    -1 as date_key,
+    null::date as full_date,
+    null::integer as year,
+    null::integer as quarter,
+    null::integer as month,
+    'Unknown' as month_name,
+    null::integer as day,
+    null::integer as day_of_week,
+    'Unknown' as day_name,
+    null::boolean as is_weekend

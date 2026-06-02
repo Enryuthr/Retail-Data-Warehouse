@@ -1,0 +1,7 @@
+issue_type,table_name,affected_row_count,severity
+invalid_phone,customers_raw,2000,medium
+invalid_registration_date,customers_raw,2000,medium
+missing_promotion_id,orders_raw,11695,low
+invalid_quantity,order_items_raw,64,high
+invalid_date_range,promotions_raw,35,high
+negative_discount_value,promotions_raw,16,high

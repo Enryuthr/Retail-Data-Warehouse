@@ -1,8 +1,8 @@
 select
     o.order_id,
-    dc.customer_key,
-    dp.promotion_key,
-    to_char(o.order_date::date, 'YYYYMMDD')::integer as order_date_key,
+    coalesce(dc.customer_key, -1) as customer_key,
+    coalesce(dp.promotion_key, -1) as promotion_key,
+    coalesce(to_char(o.order_date::date, 'YYYYMMDD')::integer, -1) as order_date_key,
     o.order_date,
     o.order_status,
     coalesce(o.order_channel, 'Unknown') as order_channel,

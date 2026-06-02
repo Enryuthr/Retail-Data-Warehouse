@@ -12,6 +12,9 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+on-run-end:
+  - "{{ drop_legacy_silver_tables() }}"
+
 models:
   retail_data_platform:
     silver:

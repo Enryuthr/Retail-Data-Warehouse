@@ -15,5 +15,34 @@ select
     expected_response_rate,
     budget_allocated,
     cost_per_acquisition,
+    invalid_date_range_flag,
+    negative_discount_flag,
+    invalid_expected_response_rate_flag,
+    invalid_budget_flag,
     is_valid_date_range
 from {{ ref('promotions') }}
+
+union all
+
+select
+    -1 as promotion_key,
+    -1 as promotion_id,
+    'Unknown' as campaign_name,
+    'Unknown' as promo_type,
+    null as discount_value,
+    null as min_order_value,
+    null as start_date,
+    null as end_date,
+    null as campaign_duration_days,
+    'Unknown' as target_segment,
+    'Unknown' as campaign_channel,
+    'Unknown' as campaign_objective,
+    'Unknown' as target_category,
+    null as expected_response_rate,
+    null as budget_allocated,
+    null as cost_per_acquisition,
+    null as invalid_date_range_flag,
+    null as negative_discount_flag,
+    null as invalid_expected_response_rate_flag,
+    null as invalid_budget_flag,
+    null as is_valid_date_range

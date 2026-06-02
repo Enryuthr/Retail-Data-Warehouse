@@ -17,6 +17,7 @@ from {{ ref('fact_orders') }} fo
 join {{ ref('dim_date') }} dd
     on fo.order_date_key = dd.date_key
 where fo.order_status = 'PAID'
+  and fo.order_date_key <> -1
 group by
     dd.full_date,
     coalesce(fo.order_channel, 'Unknown'),

@@ -105,6 +105,22 @@ services:
       - airflow-logs:/opt/airflow/logs
     command: scheduler
 
+  dbt:
+    image: python:3.11-slim
+    depends_on:
+      retail-postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: retail-postgres
+      RETAIL_PROJECT_DIR: /usr/app
+    volumes:
+      - ./:/usr/app
+    working_dir: /usr/app
+    entrypoint: ["bash", "-lc", "pip install -r requirements.txt && exec \"$@\"", "dbt-entrypoint"]
+    command: ["dbt", "--help"]
+
   metabase:
     image: metabase/metabase:v0.50.32
     depends_on:
