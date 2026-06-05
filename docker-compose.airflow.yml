@@ -127,7 +127,7 @@ services:
       retail-postgres:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${METABASE_PORT:-3000}:3000"
     volumes:
       - metabase-data:/metabase-data
     environment:
