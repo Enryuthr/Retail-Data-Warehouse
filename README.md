@@ -308,6 +308,24 @@ retail-data-platform/
 
 ## Running the Project
 
+## Pull Request Workflow
+
+Use a separate Git branch for every project change so `main` stays stable.
+
+Example workflow:
+
+```powershell
+git checkout main
+git pull origin main
+git checkout -b feature/your-change-name
+git status
+git add .
+git commit -m "Describe your change"
+git push -u origin feature/your-change-name
+```
+
+After pushing, open the GitHub repository and create a pull request from your feature branch into `main`.
+
 ### Run With Airflow and Docker
 
 ```powershell
