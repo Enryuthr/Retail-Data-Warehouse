@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-retail_dw}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-retail_dw}"]
       interval: 10s
@@ -45,6 +45,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
       AIRFLOW_UID: 50000
       POSTGRES_HOST: retail-postgres
+      POSTGRES_PORT: 5432
       RETAIL_PROJECT_DIR: /opt/airflow/project
       _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements.txt
     volumes:
@@ -74,6 +75,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
       AIRFLOW_UID: 50000
       POSTGRES_HOST: retail-postgres
+      POSTGRES_PORT: 5432
       RETAIL_PROJECT_DIR: /opt/airflow/project
       _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements.txt
     ports:
@@ -97,6 +99,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
       AIRFLOW_UID: 50000
       POSTGRES_HOST: retail-postgres
+      POSTGRES_PORT: 5432
       RETAIL_PROJECT_DIR: /opt/airflow/project
       _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements.txt
     volumes:
@@ -114,6 +117,7 @@ services:
       - .env
     environment:
       POSTGRES_HOST: retail-postgres
+      POSTGRES_PORT: 5432
       RETAIL_PROJECT_DIR: /usr/app
     volumes:
       - ./:/usr/app

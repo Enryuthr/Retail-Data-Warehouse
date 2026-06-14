@@ -11,8 +11,6 @@ from sqlalchemy.engine import URL
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 ENV_FILE = BASE_DIR / ".env"
-
-
 def load_env_file(file_path):
     if not file_path.exists():
         return

@@ -333,7 +333,7 @@ docker compose -f docker-compose.airflow.yml up airflow-init
 docker compose -f docker-compose.airflow.yml up
 ```
 
-Open Airflow at `http://localhost:8080` with `admin` / `admin`, then trigger the `retail_data_platform` DAG.
+Open Airflow at `http://localhost:8080` with `admin` / `admin`, then trigger the `retail_data_platform` DAG. The Docker PostgreSQL warehouse is available from your host machine at `localhost:5433`.
 
 The DAG runs:
 
