@@ -6,12 +6,7 @@ select
     count(distinct fo.customer_key) as unique_customers,
     sum(fo.order_value) as total_revenue,
     avg(fo.order_value) as avg_order_value,
-    sum(
-        case
-            when fo.attributed_to_promo then fo.order_value
-            else 0
-        end
-    ) as promo_attributed_revenue,
+    coalesce(sum(fo.order_value) filter (where fo.attributed_to_promo), 0) as promo_attributed_revenue,
     count(*) filter (where fo.attributed_to_promo) as promo_attributed_orders
 from {{ ref('fact_orders') }} fo
 join {{ ref('dim_date') }} dd

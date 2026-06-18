@@ -19,10 +19,7 @@ select
     extract(day from full_date)::integer as day,
     extract(isodow from full_date)::integer as day_of_week,
     trim(to_char(full_date, 'Day')) as day_name,
-    case
-        when extract(isodow from full_date) in (6, 7) then true
-        else false
-    end as is_weekend
+    extract(isodow from full_date) in (6, 7) as is_weekend
 from date_series
 
 union all

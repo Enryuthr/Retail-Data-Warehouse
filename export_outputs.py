@@ -1,58 +1,11 @@
 import logging
-import os
-from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import URL
+from sqlalchemy import text
 
-BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BASE_DIR / "outputs"
-ENV_FILE = BASE_DIR / ".env"
-
-TABLES = {
-    "silver": [
-        "silver_customers",
-        "silver_orders",
-        "silver_order_items",
-        "silver_promotions",
-        "data_quality_report",
-    ],
-    "gold": [
-        "gold_customer_360",
-        "gold_promotion_performance",
-        "gold_channel_performance",
-        "gold_category_performance",
-    ],
-}
+from pipeline_utils import EXPORT_TABLES, OUTPUT_DIR, create_db_engine
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-
-def load_env_file(file_path: Path) -> None:
-    if not file_path.exists():
-        return
-
-    for line in file_path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
-
-
-def create_db_engine():
-    load_env_file(ENV_FILE)
-    return create_engine(
-        URL.create(
-            "postgresql",
-            username=os.getenv("POSTGRES_USER", "postgres"),
-            password=os.getenv("POSTGRES_PASSWORD"),
-            host=os.getenv("POSTGRES_HOST", "localhost"),
-            port=os.getenv("POSTGRES_PORT", "5432"),
-            database=os.getenv("POSTGRES_DB", "retail_dw"),
-        )
-    )
 
 
 def export_table(engine, schema_name: str, table_name: str) -> None:
@@ -73,7 +26,7 @@ def export_table(engine, schema_name: str, table_name: str) -> None:
 
 def main() -> None:
     engine = create_db_engine()
-    for schema_name, table_names in TABLES.items():
+    for schema_name, table_names in EXPORT_TABLES.items():
         for table_name in table_names:
             export_table(engine, schema_name, table_name)
 

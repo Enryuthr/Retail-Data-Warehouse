@@ -1,5 +1,89 @@
 [
   {
+    "table_name": "orders",
+    "row_count": 15000,
+    "column_types": {
+      "order_id": "int64",
+      "customer_id": "int64",
+      "order_date": "object",
+      "order_status": "object",
+      "promotion_id": "float64",
+      "order_channel": "object",
+      "order_value": "float64",
+      "attributed_to_promo": "bool",
+      "customer_segment_at_time": "object"
+    },
+    "null_counts": {
+      "order_id": 0,
+      "customer_id": 0,
+      "order_date": 0,
+      "order_status": 0,
+      "promotion_id": 11695,
+      "order_channel": 0,
+      "order_value": 0,
+      "attributed_to_promo": 0,
+      "customer_segment_at_time": 0
+    },
+    "duplicate_row_count": 0,
+    "sample_rows": [
+      {
+        "order_id": 1,
+        "customer_id": 620,
+        "order_date": "2025-05-22 01:25:59.206935",
+        "order_status": "PAID",
+        "promotion_id": 1237.0,
+        "order_channel": "Push",
+        "order_value": 310.97,
+        "attributed_to_promo": true,
+        "customer_segment_at_time": "Medium_Value"
+      },
+      {
+        "order_id": 2,
+        "customer_id": 1407,
+        "order_date": "2024-10-11 17:08:43.019855",
+        "order_status": "PAID",
+        "promotion_id": null,
+        "order_channel": "SMS",
+        "order_value": 95.48,
+        "attributed_to_promo": false,
+        "customer_segment_at_time": "Low_Value"
+      },
+      {
+        "order_id": 3,
+        "customer_id": 1773,
+        "order_date": "2024-09-25 14:08:47.147630",
+        "order_status": "PAID",
+        "promotion_id": null,
+        "order_channel": "Email",
+        "order_value": 178.64,
+        "attributed_to_promo": false,
+        "customer_segment_at_time": "Medium_Value"
+      },
+      {
+        "order_id": 4,
+        "customer_id": 1284,
+        "order_date": "2025-03-18 12:02:11.850882",
+        "order_status": "PAID",
+        "promotion_id": null,
+        "order_channel": "Social",
+        "order_value": 86.91,
+        "attributed_to_promo": false,
+        "customer_segment_at_time": "New_Customer"
+      },
+      {
+        "order_id": 5,
+        "customer_id": 1103,
+        "order_date": "2025-04-10 15:23:59.090384",
+        "order_status": "PAID",
+        "promotion_id": null,
+        "order_channel": "Email",
+        "order_value": 227.26,
+        "attributed_to_promo": false,
+        "customer_segment_at_time": "Medium_Value"
+      }
+    ]
+  },
+  {
     "table_name": "customers",
     "row_count": 2000,
     "column_types": {
@@ -143,90 +227,6 @@
         "last_purchase_date": "17:04.5",
         "total_lifetime_orders": 11,
         "preferred_category": "Clothing"
-      }
-    ]
-  },
-  {
-    "table_name": "orders",
-    "row_count": 15000,
-    "column_types": {
-      "order_id": "int64",
-      "customer_id": "int64",
-      "order_date": "object",
-      "order_status": "object",
-      "promotion_id": "float64",
-      "order_channel": "object",
-      "order_value": "float64",
-      "attributed_to_promo": "bool",
-      "customer_segment_at_time": "object"
-    },
-    "null_counts": {
-      "order_id": 0,
-      "customer_id": 0,
-      "order_date": 0,
-      "order_status": 0,
-      "promotion_id": 11695,
-      "order_channel": 0,
-      "order_value": 0,
-      "attributed_to_promo": 0,
-      "customer_segment_at_time": 0
-    },
-    "duplicate_row_count": 0,
-    "sample_rows": [
-      {
-        "order_id": 1,
-        "customer_id": 620,
-        "order_date": "2025-05-22 01:25:59.206935",
-        "order_status": "PAID",
-        "promotion_id": 1237.0,
-        "order_channel": "Push",
-        "order_value": 310.97,
-        "attributed_to_promo": true,
-        "customer_segment_at_time": "Medium_Value"
-      },
-      {
-        "order_id": 2,
-        "customer_id": 1407,
-        "order_date": "2024-10-11 17:08:43.019855",
-        "order_status": "PAID",
-        "promotion_id": null,
-        "order_channel": "SMS",
-        "order_value": 95.48,
-        "attributed_to_promo": false,
-        "customer_segment_at_time": "Low_Value"
-      },
-      {
-        "order_id": 3,
-        "customer_id": 1773,
-        "order_date": "2024-09-25 14:08:47.147630",
-        "order_status": "PAID",
-        "promotion_id": null,
-        "order_channel": "Email",
-        "order_value": 178.64,
-        "attributed_to_promo": false,
-        "customer_segment_at_time": "Medium_Value"
-      },
-      {
-        "order_id": 4,
-        "customer_id": 1284,
-        "order_date": "2025-03-18 12:02:11.850882",
-        "order_status": "PAID",
-        "promotion_id": null,
-        "order_channel": "Social",
-        "order_value": 86.91,
-        "attributed_to_promo": false,
-        "customer_segment_at_time": "New_Customer"
-      },
-      {
-        "order_id": 5,
-        "customer_id": 1103,
-        "order_date": "2025-04-10 15:23:59.090384",
-        "order_status": "PAID",
-        "promotion_id": null,
-        "order_channel": "Email",
-        "order_value": 227.26,
-        "attributed_to_promo": false,
-        "customer_segment_at_time": "Medium_Value"
       }
     ]
   },

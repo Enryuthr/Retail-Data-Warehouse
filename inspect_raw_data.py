@@ -1,19 +1,9 @@
 import json
 import logging
-from pathlib import Path
 
 import pandas as pd
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-REPORT_DIR = BASE_DIR / "reports"
-
-CSV_FILES = {
-    "customers": DATA_DIR / "customers.csv",
-    "orders": DATA_DIR / "orders.csv",
-    "order_items": DATA_DIR / "order_items.csv",
-    "promotions": DATA_DIR / "promotions.csv",
-}
+from pipeline_utils import CSV_FILES, REPORT_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
