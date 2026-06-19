@@ -43,7 +43,7 @@ load_bronze.py -> PostgreSQL bronze schema
 dbt models/silver -> cleaned tables
    |
    v
-dbt models/gold -> analytics tables
+dbt models/gold -> star schema tables
    |
    v
 export_outputs.py -> outputs/
@@ -58,7 +58,7 @@ Airflow runs those steps as one DAG.
 | `data/` | Raw input CSV files |
 | `airflow/dags/` | Airflow pipeline definition |
 | `models/silver/` | dbt cleaning models |
-| `models/gold/` | dbt analytics models |
+| `models/gold/` | dbt star schema models |
 | `macros/` | Reusable dbt SQL helpers |
 | `tests/` | Custom dbt tests |
 | `reports/` | Raw data profiling output |
@@ -117,15 +117,14 @@ Main models:
 
 ### Gold
 
-Gold is the analytics layer.
+Gold is the star schema layer.
 
 It contains:
 
 - dimensions: `dim_customer`, `dim_product`, `dim_promotion`, `dim_date`
 - facts: `fact_orders`, `fact_order_items`
-- marts and KPI tables for customers, promotions, channels, categories, and daily sales
 
-Gold tables are the ones you would usually connect to dashboards.
+Gold keeps only reusable dimensions and facts. Extra marts can be rebuilt later from this star schema.
 
 ## Run With Docker and Airflow
 
@@ -190,7 +189,7 @@ venv\Scripts\python.exe export_outputs.py
 2. Read `inspect_raw_data.py` to see how the project checks raw data.
 3. Read `load_bronze.py` to see how CSVs enter Postgres.
 4. Read `models/silver/` to learn cleaning logic.
-5. Read `models/gold/` to learn analytics modeling.
+5. Read `models/gold/` to learn star schema modeling.
 6. Open `airflow/dags/retail_pipeline_dag.py` to see how the full workflow is connected.
 7. Run the DAG and inspect `reports/` and `outputs/`.
 

@@ -26,10 +26,12 @@ EXPORT_TABLES = {
         "data_quality_report",
     ],
     "gold": [
-        "gold_customer_360",
-        "gold_promotion_performance",
-        "gold_channel_performance",
-        "gold_category_performance",
+        "dim_customer",
+        "dim_date",
+        "dim_product",
+        "dim_promotion",
+        "fact_orders",
+        "fact_order_items",
     ],
 }
 

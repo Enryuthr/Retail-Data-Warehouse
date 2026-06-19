@@ -17,10 +17,7 @@ select
     push_opt_in,
     last_purchase_date,
     total_lifetime_orders as source_lifetime_orders,
-    preferred_category,
-    invalid_phone_flag,
-    missing_last_purchase_flag,
-    invalid_registration_date_flag
+    preferred_category
 from {{ ref('customers') }}
 
 union all
@@ -44,7 +41,4 @@ select
     null as push_opt_in,
     null as last_purchase_date,
     null as source_lifetime_orders,
-    'Unknown' as preferred_category,
-    null as invalid_phone_flag,
-    null as missing_last_purchase_flag,
-    null as invalid_registration_date_flag
+    'Unknown' as preferred_category

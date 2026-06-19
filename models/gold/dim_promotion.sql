@@ -14,12 +14,7 @@ select
     target_category,
     expected_response_rate,
     budget_allocated,
-    cost_per_acquisition,
-    invalid_date_range_flag,
-    negative_discount_flag,
-    invalid_expected_response_rate_flag,
-    invalid_budget_flag,
-    is_valid_date_range
+    cost_per_acquisition
 from {{ ref('promotions') }}
 
 union all
@@ -40,9 +35,4 @@ select
     'Unknown' as target_category,
     null as expected_response_rate,
     null as budget_allocated,
-    null as cost_per_acquisition,
-    null as invalid_date_range_flag,
-    null as negative_discount_flag,
-    null as invalid_expected_response_rate_flag,
-    null as invalid_budget_flag,
-    null as is_valid_date_range
+    null as cost_per_acquisition
