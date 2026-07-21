@@ -7,7 +7,6 @@ from sqlalchemy.engine import URL
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 ENV_FILE = BASE_DIR / ".env"
-OUTPUT_DIR = BASE_DIR / "outputs"
 REPORT_DIR = BASE_DIR / "reports"
 
 CSV_FILES = {
@@ -16,25 +15,6 @@ CSV_FILES = {
     "order_items": DATA_DIR / "order_items.csv",
     "promotions": DATA_DIR / "promotions.csv",
 }
-
-EXPORT_TABLES = {
-    "silver": [
-        "silver_customers",
-        "silver_orders",
-        "silver_order_items",
-        "silver_promotions",
-        "data_quality_report",
-    ],
-    "gold": [
-        "dim_customer",
-        "dim_date",
-        "dim_product",
-        "dim_promotion",
-        "fact_orders",
-        "fact_order_items",
-    ],
-}
-
 
 def read_env_file(file_path: Path = ENV_FILE) -> dict[str, str]:
     if not file_path.exists():

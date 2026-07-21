@@ -83,9 +83,4 @@ with DAG(
         dbt_command("test", "--select silver gold"),
     )
 
-    export_outputs = bash_task(
-        "export_outputs",
-        f"python {PROJECT_DIR / 'export_outputs.py'}",
-    )
-
-    validate_sources >> inspect_raw_data >> load_bronze >> dbt_prep >> dbt_run >> dbt_test >> export_outputs
+    validate_sources >> inspect_raw_data >> load_bronze >> dbt_prep >> dbt_run >> dbt_test

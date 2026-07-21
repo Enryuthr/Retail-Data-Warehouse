@@ -2,7 +2,7 @@
 
 This is a hands-on data engineering project for learning how a small retail analytics platform works end to end.
 
-It starts with raw CSV files, loads them into PostgreSQL, cleans and models them with dbt, runs the workflow with Airflow, and exports analytics tables as CSV and Parquet files.
+It starts with raw CSV files, loads them into PostgreSQL, cleans and models them with dbt, and runs the workflow with Airflow.
 
 The goal is not to build a perfect production platform. The goal is to understand the moving parts of a real ELT pipeline.
 
@@ -13,8 +13,8 @@ The goal is not to build a perfect production platform. The goal is to understan
 - How dbt models clean and transform data
 - How dbt tests catch bad data
 - How Airflow runs a pipeline step by step
-- How Docker runs local services like Postgres, Airflow, and Metabase
-- How Python scripts support ingestion, profiling, and exports
+- How Docker runs Airflow and Metabase alongside PostgreSQL 18 on Windows
+- How Python scripts support ingestion and profiling
 
 ## Project Flow
 
@@ -25,7 +25,6 @@ CSV files
   -> build Silver dbt models
   -> build Gold dbt models
   -> run dbt tests
-  -> export CSV and Parquet files
 ```
 
 ## Architecture
@@ -44,39 +43,34 @@ dbt models/silver -> cleaned tables
    |
    v
 dbt models/gold -> star schema tables
-   |
-   v
-export_outputs.py -> outputs/
 ```
 
 Airflow runs those steps as one DAG.
 
 ## Main Folders
 
-| Path | Purpose |
-| --- | --- |
-| `data/` | Raw input CSV files |
-| `airflow/dags/` | Airflow pipeline definition |
-| `models/silver/` | dbt cleaning models |
-| `models/gold/` | dbt star schema models |
-| `macros/` | Reusable dbt SQL helpers |
-| `tests/` | Custom dbt tests |
-| `reports/` | Raw data profiling output |
-| `outputs/` | Exported CSV and Parquet tables |
-| `docker/` | Postgres initialization SQL |
+| Path               | Purpose                         |
+| ------------------ | ------------------------------- |
+| `data/`          | Raw input CSV files             |
+| `airflow/dags/`  | Airflow pipeline definition     |
+| `models/silver/` | dbt cleaning models             |
+| `models/gold/`   | dbt star schema models          |
+| `macros/`        | Reusable dbt SQL helpers        |
+| `tests/`         | Custom dbt tests                |
+| `reports/`       | Raw data profiling output       |
+| `docker/`        | Postgres initialization SQL     |
 
 ## Important Files
 
-| File | What It Does |
-| --- | --- |
-| `docker-compose.airflow.yml` | Starts Postgres, Airflow, dbt helper, and Metabase |
-| `pipeline_utils.py` | Shared paths, `.env` loading, table lists, and database connection helper |
-| `inspect_raw_data.py` | Profiles raw CSV files and writes quality reports |
-| `load_bronze.py` | Loads raw CSV files into PostgreSQL `bronze` tables |
-| `export_outputs.py` | Exports Silver and Gold tables to CSV and Parquet |
-| `dbt_project.yml` | dbt project configuration |
-| `profiles.yml.example` | Example dbt database connection config |
-| `models/sources.yml` | Declares raw Bronze source tables for dbt |
+| File                           | What It Does                                                               |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| `docker-compose.airflow.yml` | Starts Postgres, Airflow, dbt helper, and Metabase                         |
+| `pipeline_utils.py`          | Shared paths,`.env` loading, table lists, and database connection helper |
+| `inspect_raw_data.py`        | Profiles raw CSV files and writes quality reports                          |
+| `load_bronze.py`             | Loads raw CSV files into PostgreSQL`bronze` tables                       |
+| `dbt_project.yml`            | dbt project configuration                                                  |
+| `profiles.yml.example`       | Example dbt database connection config                                     |
+| `models/sources.yml`         | Declares raw Bronze source tables for dbt                                  |
 
 ## Data Layers
 
@@ -137,7 +131,7 @@ docker compose -f docker-compose.airflow.yml up -d
 Open Airflow:
 
 ```text
-http://localhost:8081
+http://localhost:18081
 ```
 
 Login:
@@ -154,11 +148,11 @@ retail_data_platform
 
 Local service ports:
 
-| Service | URL / Port |
-| --- | --- |
-| Airflow | `http://localhost:8081` |
-| Metabase | `http://localhost:3001` |
-| Retail Postgres | `localhost:5434` |
+| Service              | URL / Port                 |
+| -------------------- | -------------------------- |
+| Airflow              | `http://localhost:18081` |
+| Metabase             | `http://localhost:13001` |
+| Retail PostgreSQL 18 | `localhost:5432`         |
 
 Stop the stack:
 
@@ -180,7 +174,6 @@ python -m venv venv
 venv\Scripts\python.exe -m pip install -r requirements.txt
 venv\Scripts\python.exe inspect_raw_data.py
 venv\Scripts\python.exe load_bronze.py
-venv\Scripts\python.exe export_outputs.py
 ```
 
 ## Learning Path
@@ -191,7 +184,7 @@ venv\Scripts\python.exe export_outputs.py
 4. Read `models/silver/` to learn cleaning logic.
 5. Read `models/gold/` to learn star schema modeling.
 6. Open `airflow/dags/retail_pipeline_dag.py` to see how the full workflow is connected.
-7. Run the DAG and inspect `reports/` and `outputs/`.
+7. Run the DAG and inspect `reports/`.
 
 ## Common Debugging Commands
 
@@ -219,5 +212,5 @@ docker compose -f docker-compose.airflow.yml run --rm dbt dbt test --profiles-di
 
 - `.env` is local config and should not be committed.
 - `target/`, `logs/`, `dbt_packages/`, and `venv/` are generated.
-- If port `8080` is already used by another project, this project uses Airflow on `8081`.
+- The pipeline uses PostgreSQL 18 on Windows at `localhost:5432`; Docker services reach it at `host.docker.internal:5432`.
 - This project favors readable learning code over production complexity.
