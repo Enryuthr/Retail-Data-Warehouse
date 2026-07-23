@@ -1,0 +1,3 @@
+*
+!Dockerfile.airflow
+!requirements-dbt.txt

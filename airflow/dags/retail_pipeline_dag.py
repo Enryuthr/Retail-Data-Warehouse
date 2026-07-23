@@ -10,7 +10,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 
 PROJECT_DIR = Path(os.getenv("RETAIL_PROJECT_DIR", "/opt/airflow/project"))
-DBT_COMMAND = f"{sys.executable} -c 'from dbt.cli.main import cli; cli()'"
+DBT_COMMAND = "dbt"
 
 if str(PROJECT_DIR) not in sys.path:
     sys.path.append(str(PROJECT_DIR))

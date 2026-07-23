@@ -122,11 +122,19 @@ Gold keeps only reusable dimensions and facts. Extra marts can be rebuilt later 
 
 ## Run With Docker and Airflow
 
+Build the shared Airflow image once:
+
+```powershell
+docker compose -f docker-compose.airflow.yml build
+```
+
 Start the stack:
 
 ```powershell
 docker compose -f docker-compose.airflow.yml up -d
 ```
+
+Rebuild only after changing a requirements file. Dependencies are installed in the image, not each time a container starts.
 
 Open Airflow:
 
