@@ -17,7 +17,7 @@ with prepared as (
         {{ text_clean('expected_response_rate') }} as expected_response_rate_txt,
         {{ text_clean('budget_allocated') }} as budget_allocated_txt,
         {{ text_clean('cost_per_acquisition') }} as cost_per_acquisition_txt
-    from {{ source('bronze', 'promotions_raw') }}
+    from {{ latest_bronze('promotions_raw', 'promotion_id') }}
 ),
 typed as (
     select

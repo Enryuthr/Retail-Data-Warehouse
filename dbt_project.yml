@@ -16,7 +16,9 @@ models:
   retail_data_platform:
     silver:
       +schema: silver
+      # ponytail: full rebuild keeps late-arrival and tombstone joins deterministic at this scale.
       +materialized: table
     gold:
       +schema: gold
+      # ponytail: full rebuild avoids partial-fact edge cases until measured volume requires it.
       +materialized: table

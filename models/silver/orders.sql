@@ -11,7 +11,7 @@ with prepared as (
         {{ text_clean('order_value') }} as order_value_txt,
         {{ text_clean('attributed_to_promo') }} as attributed_to_promo_txt,
         {{ text_clean('customer_segment_at_time') }} as customer_segment_at_time_txt
-    from {{ source('bronze', 'orders_raw') }}
+    from {{ latest_bronze('orders_raw', 'order_id') }}
 ),
 typed as (
     select

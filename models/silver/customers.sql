@@ -20,7 +20,7 @@ with prepared as (
         {{ text_clean('last_purchase_date') }} as last_purchase_date_txt,
         {{ text_clean('total_lifetime_orders') }} as total_lifetime_orders_txt,
         {{ text_clean('preferred_category') }} as preferred_category_txt
-    from {{ source('bronze', 'customers_raw') }}
+    from {{ latest_bronze('customers_raw', 'customer_id') }}
 ),
 typed as (
     select

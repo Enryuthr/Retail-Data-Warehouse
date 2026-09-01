@@ -6,7 +6,7 @@ with customer_raw as (
         {{ text_clean('phone_number') }} as phone_number_txt,
         {{ text_clean('registration_date') }} as registration_date_txt,
         {{ parse_date(text_clean('registration_date')) }} as registration_date
-    from {{ source('bronze', 'customers_raw') }}
+    from {{ latest_bronze('customers_raw', 'customer_id') }}
 ),
 order_raw as (
     select
@@ -15,7 +15,7 @@ order_raw as (
         {{ text_clean('promotion_id') }} as promotion_id_txt,
         {{ text_clean('order_value') }} as order_value_txt,
         {{ bool_value(text_clean('attributed_to_promo')) }} as attributed_to_promo
-    from {{ source('bronze', 'orders_raw') }}
+    from {{ latest_bronze('orders_raw', 'order_id') }}
 ),
 order_item_raw as (
     select
@@ -25,7 +25,7 @@ order_item_raw as (
         {{ text_clean('quantity') }} as quantity_txt,
         {{ text_clean('unit_price') }} as unit_price_txt,
         {{ bool_value(text_clean('attributed_to_promo')) }} as attributed_to_promo
-    from {{ source('bronze', 'order_items_raw') }}
+    from {{ latest_bronze('order_items_raw', 'order_item_id') }}
 ),
 promotion_raw as (
     select
@@ -36,7 +36,7 @@ promotion_raw as (
         {{ text_clean('cost_per_acquisition') }} as cost_per_acquisition_txt,
         {{ parse_date(text_clean('start_date')) }} as start_date,
         {{ parse_date(text_clean('end_date')) }} as end_date
-    from {{ source('bronze', 'promotions_raw') }}
+    from {{ latest_bronze('promotions_raw', 'promotion_id') }}
 ),
 checks as (
     select 'duplicate_primary_key' as issue_type, 'customers_raw' as table_name, count(*) - count(distinct customer_id_txt) as affected_row_count, 'high' as severity

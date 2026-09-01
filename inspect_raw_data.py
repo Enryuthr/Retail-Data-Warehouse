@@ -1,9 +1,12 @@
 import json
 import logging
+import argparse
+from datetime import date
+from pathlib import Path
 
 import pandas as pd
 
-from pipeline_utils import CSV_FILES, REPORT_DIR
+from pipeline_utils import BASE_DIR, CSV_FILES, REPORT_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -68,9 +71,13 @@ def bad_data_summary(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return pd.DataFrame(rows).query("affected_row_count > 0")
 
 
-def main() -> None:
+def main(source_dir: Path | None = None) -> None:
     REPORT_DIR.mkdir(exist_ok=True)
-    tables = {name: pd.read_csv(path) for name, path in CSV_FILES.items()}
+    files = {
+        name: (source_dir / f"{name}.csv" if source_dir else path)
+        for name, path in CSV_FILES.items()
+    }
+    tables = {name: pd.read_csv(path) for name, path in files.items()}
 
     profiles = [table_profile(name, df) for name, df in tables.items()]
     bad_data = bad_data_summary(tables)
@@ -91,4 +98,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Profile the base or one generated source batch.")
+    parser.add_argument("--date", type=date.fromisoformat)
+    parser.add_argument("--source-dir", type=Path)
+    args = parser.parse_args()
+    source_dir = args.source_dir
+    if args.date:
+        source_dir = BASE_DIR / "data" / "incoming" / args.date.isoformat()
+    main(source_dir)

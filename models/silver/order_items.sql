@@ -10,7 +10,7 @@ with prepared as (
         {{ text_clean('unit_price') }} as unit_price_txt,
         {{ text_clean('promotion_id') }} as promotion_id_txt,
         {{ text_clean('attributed_to_promo') }} as attributed_to_promo_txt
-    from {{ source('bronze', 'order_items_raw') }}
+    from {{ latest_bronze('order_items_raw', 'order_item_id') }}
 ),
 typed as (
     select
