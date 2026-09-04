@@ -1,7 +1,8 @@
+import logging
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -62,6 +63,9 @@ TRACKING_COLUMNS = [
     "operation", "source_updated_at", "business_date",
 ]
 
+LOG = logging.getLogger(__name__)
+
+
 def read_env_file(file_path: Path = ENV_FILE) -> dict[str, str]:
     if not file_path.exists():
         return {}
@@ -101,4 +105,42 @@ def create_db_engine():
             port=os.getenv("POSTGRES_PORT", "5432"),
             database=os.getenv("POSTGRES_DB", "retail_dw"),
         )
+    )
+
+
+def check_batch_status(logical_date: str) -> bool:
+    engine = create_db_engine()
+    try:
+        with engine.connect() as connection:
+            batch = connection.execute(
+                text(
+                    """
+                    select batch_id, status
+                    from control.ingestion_batches
+                    where pipeline_name = :pipeline_name
+                      and logical_date = cast(:logical_date as date)
+                    """
+                ),
+                {"pipeline_name": "retail_daily", "logical_date": logical_date},
+            ).mappings().one_or_none()
+    finally:
+        engine.dispose()
+
+    if batch is None:
+        raise RuntimeError(
+            "No ingestion batch found for pipeline_name=retail_daily "
+            f"and logical_date={logical_date}"
+        )
+
+    batch_id = batch["batch_id"]
+    status = batch["status"]
+    if status == "completed":
+        LOG.info("Batch %s is already completed; skipping dbt rebuild and tests.", batch_id)
+        return False
+    if status == "ingested":
+        LOG.info("Batch %s is ingested; running dbt rebuild and tests.", batch_id)
+        return True
+    raise RuntimeError(
+        f"Unexpected ingestion batch status {status!r} for batch {batch_id}; "
+        "expected 'ingested' or 'completed'"
     )

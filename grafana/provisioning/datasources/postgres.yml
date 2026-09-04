@@ -1,0 +1,46 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: Retail Warehouse
+    orgId: 1
+  - name: Airflow Metadata
+    orgId: 1
+
+datasources:
+  - name: Retail Warehouse
+    uid: retail-warehouse
+    type: postgres
+    access: proxy
+    url: host.docker.internal:5432
+    user: $__env{GRAFANA_RETAIL_DB_USER}
+    database: $__env{POSTGRES_DB}
+    isDefault: true
+    editable: false
+    jsonData:
+      database: $__env{POSTGRES_DB}
+      sslmode: disable
+      postgresVersion: 1800
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: $__env{GRAFANA_RETAIL_DB_PASSWORD}
+
+  - name: Airflow Metadata
+    uid: airflow-metadata
+    type: postgres
+    access: proxy
+    url: airflow-postgres:5432
+    user: $__env{GRAFANA_AIRFLOW_DB_USER}
+    database: airflow
+    isDefault: false
+    editable: false
+    jsonData:
+      database: airflow
+      sslmode: disable
+      postgresVersion: 1600
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: $__env{GRAFANA_AIRFLOW_DB_PASSWORD}

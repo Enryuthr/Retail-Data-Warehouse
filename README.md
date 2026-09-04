@@ -130,14 +130,21 @@ python complete_pipeline.py --date 2026-09-01 --pipeline-name retail_daily
 
 The loader calculates a SHA-256 checksum, validates headers, keys, operations, timestamps,
 duplicate keys, and source relationships, stages rows in temporary tables, and appends them in
-one PostgreSQL transaction. A repeated successful batch with the same checksums is a no-op. A
-tombstone remains in Bronze and removes the record from the latest current-state Silver model.
+one PostgreSQL transaction. A repeated successful batch with the same checksums is validated and
+loaded safely, then `should_run_dbt` detects the completed batch and skips the dbt rebuild and
+tests. An `ingested` but unfinished batch runs dbt again for recovery. A tombstone remains in
+Bronze and removes the record from the latest current-state Silver model.
 Silver and Gold remain full dbt table rebuilds because they are small enough here; this keeps
 late-arriving and updated relationships deterministic without making every model incremental.
 
-The Airflow DAG runs daily at `@daily` using UTC logical date `{{ ds }}`. It has a fixed
-`2026-01-01` UTC start date and `catchup=False`, so deployment does not silently launch a large
-historical run. Trigger one selected date or backfill an explicit range:
+If dbt model code changes without new source data, use the existing manual dbt `run` and `test`
+commands above; the short-circuit only skips work for an already completed logical date.
+
+The Airflow DAG runs every five minutes with `*/5 * * * *` while retaining the UTC logical date
+`{{ ds }}`. Runs within the same UTC day therefore target the same idempotent batch and normally
+short-circuit after that date is completed. It has a fixed `2026-01-01` UTC start date and
+`catchup=False`, so deployment does not silently launch a large historical run. Trigger one
+selected date or backfill an explicit range:
 
 ```powershell
 docker compose -f docker-compose.airflow.yml exec airflow-scheduler airflow dags trigger retail_data_platform --exec-date 2026-09-02T00:00:00+00:00
@@ -251,6 +258,86 @@ Stop the stack:
 ```powershell
 docker compose -f docker-compose.airflow.yml down
 ```
+
+## Grafana Pipeline Monitoring
+
+Grafana reads two databases directly with dedicated read-only roles:
+
+```text
+retail_dw control + silver tables ----\
+                                       -> Grafana dashboard and alert rules
+Airflow metadata tables --------------/
+```
+
+They remain separate because Airflow metadata describes orchestration runs, tasks, and scheduler
+health, while `retail_dw` describes business-data ingestion, watermarks, and current dbt quality.
+Grafana is at `http://localhost:13002`; the provisioned dashboard is **Retail Data Platform /
+Retail Pipeline Monitoring**. Dashboard JSON is under `grafana/dashboards/`, and datasource,
+dashboard-provider, and alert-rule definitions are under `grafana/provisioning/`.
+
+Copy the `GRAFANA_*` keys from `.env.example` into the gitignored `.env`. The setup command below
+adds only missing keys with strong local passwords, then idempotently creates or updates the two
+five-connection, read-only roles. It needs the existing retail administrator values in `.env` and
+the `airflow-postgres` service running:
+
+```powershell
+docker compose -f docker-compose.airflow.yml up -d airflow-postgres
+powershell -ExecutionPolicy Bypass -File scripts/setup_grafana_roles.ps1
+```
+
+Start only Grafana and its required metadata database, or start the full stack:
+
+```powershell
+docker compose -f docker-compose.airflow.yml up -d grafana
+docker compose -f docker-compose.airflow.yml up -d
+```
+
+Verify the service and both provisioned data sources:
+
+```powershell
+Invoke-RestMethod http://localhost:13002/api/health
+$grafanaEnv = @{}
+Get-Content .env | ForEach-Object {
+  if ($_ -match '^([^#=]+)=(.*)$') { $grafanaEnv[$matches[1]] = $matches[2] }
+}
+$securePassword = ConvertTo-SecureString $grafanaEnv.GRAFANA_ADMIN_PASSWORD -AsPlainText -Force
+$grafanaCredential = [pscredential]::new($grafanaEnv.GRAFANA_ADMIN_USER, $securePassword)
+Invoke-RestMethod -Authentication Basic -Credential $grafanaCredential `
+  http://localhost:13002/api/datasources/uid/retail-warehouse/health
+Invoke-RestMethod -Authentication Basic -Credential $grafanaCredential `
+  http://localhost:13002/api/datasources/uid/airflow-metadata/health
+```
+
+Batch states have distinct meanings: `started` is in progress, `ingested` means Bronze committed
+but dbt/final completion may need recovery, `completed` means dbt tests passed and the watermark
+was advanced, and `failed` means ingestion failed. A successful DAG run may contain neutral
+`skipped` dbt tasks when `should_run_dbt` finds the logical-date batch already completed; this is
+expected and is not an alert. Logical dates and stored timestamps stay in UTC, while Grafana
+displays them in `Asia/Jakarta`.
+
+The seven provisioned Grafana-managed rules are visible under **Alerting > Alert rules**. They do
+not send notifications until you add a user-owned destination under **Alerting > Contact points**
+and route the rules with a notification policy. No email, webhook, or messaging credential is
+invented or stored by this project.
+
+### Troubleshooting Grafana monitoring
+
+- `host.docker.internal` failure: confirm Windows PostgreSQL listens on port 5432 and permits the
+  Docker subnet; test the Retail Warehouse datasource from Grafana.
+- Permission errors: rerun `scripts/setup_grafana_roles.ps1`; the Grafana roles intentionally have
+  access only to the listed monitoring tables and cannot write or browse unrelated schemas.
+- Provisioning YAML/JSON errors: validate the tracked files, then inspect
+  `docker compose -f docker-compose.airflow.yml logs grafana`.
+- Blank retail panels: run the initial ingestion plus dbt build so the control tables and
+  `silver.data_quality_report` exist.
+- Stale scheduler heartbeat: confirm `airflow-scheduler` is running and inspect its logs before
+  silencing the alert.
+
+`docker compose -f docker-compose.airflow.yml down` preserves Grafana's named volume.
+`docker compose -f docker-compose.airflow.yml down -v` deletes named-volume data and is only for
+an intentional local reset. A remote or production deployment must replace `sslmode=disable` with
+TLS (preferably `verify-full`), use managed secrets and backups, and consider external Grafana
+storage for high availability.
 
 ## Run dbt Manually
 

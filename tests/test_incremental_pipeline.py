@@ -6,8 +6,10 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from generate_dummy_data import generate
+from pipeline_utils import check_batch_status
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -121,8 +123,57 @@ class IncrementalPipelineTests(unittest.TestCase):
         source = (ROOT / "airflow" / "dags" / "retail_pipeline_dag.py").read_text(encoding="utf-8")
         ast.parse(source)
         self.assertIn("{{ ds }}", source)
-        self.assertIn('schedule="@daily"', source)
+        self.assertIn('schedule="*/5 * * * *"', source)
         self.assertIn("complete_pipeline", source)
+
+    def test_dbt_short_circuit_status_and_dependency(self) -> None:
+        logical_date = "2026-09-01"
+        batch_id = "retail_daily:2026-09-01"
+
+        def run_check(status: str | None):
+            engine = MagicMock()
+            connection = engine.connect.return_value.__enter__.return_value
+            result = MagicMock()
+            result.mappings.return_value.one_or_none.return_value = (
+                None if status is None else {"batch_id": batch_id, "status": status}
+            )
+            connection.execute.return_value = result
+            with patch("pipeline_utils.create_db_engine", return_value=engine):
+                outcome = check_batch_status(logical_date)
+            return outcome, connection
+
+        with self.assertLogs("pipeline_utils", level="INFO") as completed_logs:
+            completed, connection = run_check("completed")
+        self.assertFalse(completed)
+        self.assertIn(
+            "Batch retail_daily:2026-09-01 is already completed; skipping dbt rebuild and tests.",
+            "\n".join(completed_logs.output),
+        )
+        self.assertEqual(
+            connection.execute.call_args.args[1],
+            {"pipeline_name": "retail_daily", "logical_date": logical_date},
+        )
+
+        with self.assertLogs("pipeline_utils", level="INFO") as ingested_logs:
+            ingested, _ = run_check("ingested")
+        self.assertTrue(ingested)
+        self.assertIn(
+            "Batch retail_daily:2026-09-01 is ingested; running dbt rebuild and tests.",
+            "\n".join(ingested_logs.output),
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "No ingestion batch found"):
+            run_check(None)
+        for status in ("started", "failed"):
+            with self.subTest(status=status):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected ingestion batch status"):
+                    run_check(status)
+
+        source = (ROOT / "airflow" / "dags" / "retail_pipeline_dag.py").read_text(encoding="utf-8")
+        self.assertRegex(
+            source,
+            r"load_bronze\s+>>\s+should_run_dbt\s+>>\s+dbt_prep\s+>>\s+dbt_run\s+>>\s+dbt_test\s+>>\s+complete_pipeline",
+        )
 
 
 if __name__ == "__main__":

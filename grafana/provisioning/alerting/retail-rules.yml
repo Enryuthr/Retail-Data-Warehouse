@@ -1,0 +1,220 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: Retail pipeline health
+    folder: Retail Data Platform
+    interval: 1m
+    rules:
+      - uid: retail-latest-dag-failed
+        title: Latest DAG run failed
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: airflow-metadata
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: airflow-metadata}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "SELECT now() AS time, CASE WHEN (SELECT state FROM dag_run WHERE dag_id = 'retail_data_platform' ORDER BY execution_date DESC LIMIT 1) = 'failed' THEN 1 ELSE 0 END::double precision AS value"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [0]}, operator: {type: and}}]
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        annotations:
+          summary: The latest retail_data_platform DAG run failed.
+          description: Historical failures do not affect this rule; only the newest run is evaluated.
+        labels: {severity: critical, service: airflow}
+
+      - uid: retail-watermark-stale
+        title: Pipeline watermark stale
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: retail-warehouse
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: retail-warehouse}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "SELECT now() AS time, COALESCE(EXTRACT(EPOCH FROM (now() - (SELECT updated_at FROM control.pipeline_watermarks WHERE pipeline_name = 'retail_daily' LIMIT 1))) / 3600.0, 999999)::double precision AS value"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [36]}, operator: {type: and}}]
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: The retail_daily watermark is missing or older than 36 hours.
+        labels: {severity: warning, service: retail-warehouse}
+
+      - uid: retail-batch-failed-stuck
+        title: Batch failed or stuck
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: retail-warehouse
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: retail-warehouse}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "WITH bad AS (SELECT pipeline_name, batch_id, logical_date::text AS logical_date, status FROM control.ingestion_batches WHERE pipeline_name = 'retail_daily' AND (status = 'failed' OR (status IN ('started','ingested') AND started_at < now() - interval '60 minutes')) ORDER BY logical_date DESC LIMIT 1) SELECT now() AS time, CASE WHEN bad.batch_id IS NULL THEN 0 ELSE 1 END::double precision AS value, COALESCE(bad.pipeline_name, 'retail_daily') AS pipeline_name, COALESCE(bad.batch_id, 'none') AS batch_id, COALESCE(bad.logical_date, 'none') AS logical_date, COALESCE(bad.status, 'healthy') AS status FROM (SELECT 1) present LEFT JOIN bad ON true"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [0]}, operator: {type: and}}]
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: "Batch {{ $labels.batch_id }} is {{ $labels.status }}."
+          description: "Pipeline={{ $labels.pipeline_name }}, logical_date={{ $labels.logical_date }}."
+        labels: {severity: critical, service: retail-warehouse}
+
+      - uid: retail-scheduler-heartbeat-stale
+        title: Scheduler heartbeat stale
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: airflow-metadata
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: airflow-metadata}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "SELECT now() AS time, COALESCE(EXTRACT(EPOCH FROM (now() - MAX(latest_heartbeat))), 999999)::double precision AS value FROM job WHERE job_type = 'SchedulerJob' AND state = 'running'"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [120]}, operator: {type: and}}]
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: No running SchedulerJob heartbeat has been seen for more than two minutes.
+        labels: {severity: critical, service: airflow}
+
+      - uid: retail-dag-import-error
+        title: DAG import error
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: airflow-metadata
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: airflow-metadata}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "SELECT now() AS time, COALESCE((SELECT CASE WHEN has_import_errors THEN 1 ELSE 0 END FROM dag WHERE dag_id = 'retail_data_platform' LIMIT 1), 1)::double precision AS value"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [0]}, operator: {type: and}}]
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: retail_data_platform has an import error or is missing from Airflow metadata.
+        labels: {severity: critical, service: airflow}
+
+      - uid: retail-high-severity-dq
+        title: High-severity data-quality issue
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: retail-warehouse
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: retail-warehouse}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "SELECT now() AS time, COALESCE(SUM(affected_row_count), 0)::double precision AS value FROM silver.data_quality_report WHERE severity = 'high'"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [0]}, operator: {type: and}}]
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: Current high-severity data-quality affected rows are greater than zero.
+          description: This is a current-state snapshot; dbt-test detail is in the Airflow dbt_test logs.
+        labels: {severity: warning, service: retail-warehouse}
+
+      - uid: retail-rejected-rows
+        title: Rejected ingestion rows
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: retail-warehouse
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              datasource: {type: postgres, uid: retail-warehouse}
+              editorMode: code
+              format: time_series
+              rawQuery: true
+              rawSql: "SELECT now() AS time, COALESCE((SELECT rows_rejected FROM control.ingestion_batches WHERE pipeline_name = 'retail_daily' ORDER BY logical_date DESC LIMIT 1), 0)::double precision AS value"
+          - refId: B
+            datasourceUid: __expr__
+            model: {datasource: {type: __expr__, uid: __expr__}, expression: A, reducer: last, type: reduce}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: {type: __expr__, uid: __expr__}
+              expression: B
+              type: threshold
+              conditions: [{type: query, query: {params: [C]}, reducer: {type: last, params: []}, evaluator: {type: gt, params: [0]}, operator: {type: and}}]
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: The newest retail_daily batch contains rejected rows.
+        labels: {severity: warning, service: retail-warehouse}

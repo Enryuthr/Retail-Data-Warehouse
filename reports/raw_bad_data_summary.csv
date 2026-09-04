@@ -1,8 +1,5 @@
 table_name,issue_type,affected_row_count,severity
-customers,invalid_registration_date,2000,medium
-customers,negative_phone_number,2000,medium
-customers,missing_last_purchase_date,404,low
-orders,missing_promotion_id,11695,low
-order_items,invalid_quantity,64,high
-promotions,negative_discount_value,16,high
-promotions,invalid_date_range,35,high
+customers,invalid_registration_date,2,medium
+customers,negative_phone_number,2,medium
+customers,missing_last_purchase_date,5,low
+orders,missing_promotion_id,19,low
